@@ -13,12 +13,12 @@
 
     <style name="Widget.DatePicker">
         <!--item name="android:layout">@android:layout/date_picker</item-->
-        <item name="android:calendarViewShown">false</item>
+        <item name="dp_calendarViewShown">false</item>
     </style>
 
     <style name="Widget.Holo.DatePicker" parent="Widget.DatePicker">
-        <item name="android:layout">@layout/date_picker_holo</item>
-        <item name="android:calendarViewShown">true</item>
+        <item name="dp_internalLayout">@layout/date_picker_holo</item>
+        <item name="dp_calendarViewShown">true</item>
     </style>
 
     <style name="Widget.Holo.Light.DatePicker" parent="Widget.Holo.DatePicker">

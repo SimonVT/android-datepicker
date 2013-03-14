@@ -17,11 +17,12 @@
 */
 -->
 
-<net.simonvt.widget.DatePicker xmlns:android="http://schemas.android.com/apk/res/android"
+<net.simonvt.datepicker.DatePicker xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:lib="http://schemas.android.com/apk/res-auto"
     android:id="@+id/datePicker"
     android:layout_gravity="center_horizontal"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:spinnersShown="true"
-    android:calendarViewShown="true"
+    lib:dp_spinnersShown="true"
+    lib:dp_calendarViewShown="true"
     />

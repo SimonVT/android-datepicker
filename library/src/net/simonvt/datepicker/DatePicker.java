@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package net.simonvt.widget;
+package net.simonvt.datepicker;
 
-import net.simonvt.datepicker.R;
+import net.simonvt.calendarview.CalendarView;
+import net.simonvt.numberpicker.NumberPicker;
 
 import android.content.Context;
 import android.content.res.Configuration;
@@ -31,8 +32,9 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
-import android.view.accessibility.AccessibilityManager;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -42,19 +44,21 @@ import android.widget.TextView;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * This class is a widget for selecting a date. The date can be selected by a
- * year, month, and day spinners or a {@link android.widget.CalendarView}. The set of spinners
+ * year, month, and day spinners or a {@link CalendarView}. The set of spinners
  * and the calendar view are automatically synchronized. The client can
  * customize whether only the spinners, or only the calendar view, or both to be
  * displayed. Also the minimal and maximal date from which dates to be selected
  * can be customized.
  * <p>
- * See the <a href="{@docRoot}resources/tutorials/views/hello-datepicker.html">Date
- * Picker tutorial</a>.
+ * See the <a href="{@docRoot}guide/topics/ui/controls/pickers.html">Pickers</a>
+ * guide.
  * </p>
  * <p>
  * For a dialog using this view, see {@link android.app.DatePickerDialog}.
@@ -120,8 +124,6 @@ public class DatePicker extends FrameLayout {
 
     private boolean mIsEnabled = DEFAULT_ENABLED_STATE;
 
-    private Context mContext;
-
     /**
      * The callback used to indicate the user changes\d the date.
      */
@@ -149,23 +151,22 @@ public class DatePicker extends FrameLayout {
 
     public DatePicker(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        mContext = context;
 
         // initialization based on locale
         setCurrentLocale(Locale.getDefault());
 
         TypedArray attributesArray = context.obtainStyledAttributes(attrs, R.styleable.DatePicker,
                 defStyle, 0);
-        boolean spinnersShown = attributesArray.getBoolean(R.styleable.DatePicker_android_spinnersShown,
+        boolean spinnersShown = attributesArray.getBoolean(R.styleable.DatePicker_dp_spinnersShown,
                 DEFAULT_SPINNERS_SHOWN);
         boolean calendarViewShown = attributesArray.getBoolean(
-                R.styleable.DatePicker_android_calendarViewShown, DEFAULT_CALENDAR_VIEW_SHOWN);
-        int startYear = attributesArray.getInt(R.styleable.DatePicker_android_startYear,
+                R.styleable.DatePicker_dp_calendarViewShown, DEFAULT_CALENDAR_VIEW_SHOWN);
+        int startYear = attributesArray.getInt(R.styleable.DatePicker_dp_startYear,
                 DEFAULT_START_YEAR);
-        int endYear = attributesArray.getInt(R.styleable.DatePicker_android_endYear, DEFAULT_END_YEAR);
-        String minDate = attributesArray.getString(R.styleable.DatePicker_android_minDate);
-        String maxDate = attributesArray.getString(R.styleable.DatePicker_android_maxDate);
-        int layoutResourceId = attributesArray.getResourceId(R.styleable.DatePicker_android_layout,
+        int endYear = attributesArray.getInt(R.styleable.DatePicker_dp_endYear, DEFAULT_END_YEAR);
+        String minDate = attributesArray.getString(R.styleable.DatePicker_dp_minDate);
+        String maxDate = attributesArray.getString(R.styleable.DatePicker_dp_maxDate);
+        int layoutResourceId = attributesArray.getResourceId(R.styleable.DatePicker_dp_internalLayout,
                 R.layout.date_picker_holo);
         attributesArray.recycle();
 
@@ -223,10 +224,10 @@ public class DatePicker extends FrameLayout {
 
         // day
         mDaySpinner = (NumberPicker) findViewById(R.id.day);
-        mDaySpinner.setFormatter(NumberPicker.TWO_DIGIT_FORMATTER);
+        mDaySpinner.setFormatter(NumberPicker.getTwoDigitFormatter());
         mDaySpinner.setOnLongPressUpdateInterval(100);
         mDaySpinner.setOnValueChangedListener(onChangeListener);
-        mDaySpinnerInput = (EditText) mDaySpinner.findViewById(R.id.np_numberpicker_input);
+        mDaySpinnerInput = (EditText) mDaySpinner.findViewById(R.id.np__numberpicker_input);
 
         // month
         mMonthSpinner = (NumberPicker) findViewById(R.id.month);
@@ -235,13 +236,13 @@ public class DatePicker extends FrameLayout {
         mMonthSpinner.setDisplayedValues(mShortMonths);
         mMonthSpinner.setOnLongPressUpdateInterval(200);
         mMonthSpinner.setOnValueChangedListener(onChangeListener);
-        mMonthSpinnerInput = (EditText) mMonthSpinner.findViewById(R.id.np_numberpicker_input);
+        mMonthSpinnerInput = (EditText) mMonthSpinner.findViewById(R.id.np__numberpicker_input);
 
         // year
         mYearSpinner = (NumberPicker) findViewById(R.id.year);
         mYearSpinner.setOnLongPressUpdateInterval(100);
         mYearSpinner.setOnValueChangedListener(onChangeListener);
-        mYearSpinnerInput = (EditText) mYearSpinner.findViewById(R.id.np_numberpicker_input);
+        mYearSpinnerInput = (EditText) mYearSpinner.findViewById(R.id.np__numberpicker_input);
 
         // show only what the user required but make sure we
         // show something and the spinners have higher priority
@@ -282,18 +283,19 @@ public class DatePicker extends FrameLayout {
         // re-order the number spinners to match the current date format
         reorderSpinners();
 
-        // set content descriptions
-        AccessibilityManager am = (AccessibilityManager) mContext.getSystemService(Context.ACCESSIBILITY_SERVICE);
-        //if (AccessibilityManager.getInstance(mContext).isEnabled()) {
-        if (am.isEnabled()) {
-            setContentDescriptions();
+        // accessibility
+        setContentDescriptions();
+
+        // If not explicitly specified this view is important for accessibility.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && getImportantForAccessibility() == IMPORTANT_FOR_ACCESSIBILITY_AUTO) {
+            setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
         }
     }
 
     /**
-     * Gets the minimal date supported by this {@link net.simonvt.widget.DatePicker} in
+     * Gets the minimal date supported by this {@link DatePicker} in
      * milliseconds since January 1, 1970 00:00:00 in
-     * {@link java.util.TimeZone#getDefault()} time zone.
+     * {@link TimeZone#getDefault()} time zone.
      * <p>
      * Note: The default minimal date is 01/01/1900.
      * <p>
@@ -305,9 +307,9 @@ public class DatePicker extends FrameLayout {
     }
 
     /**
-     * Sets the minimal date supported by this {@link android.widget.NumberPicker} in
+     * Sets the minimal date supported by this {@link NumberPicker} in
      * milliseconds since January 1, 1970 00:00:00 in
-     * {@link java.util.TimeZone#getDefault()} time zone.
+     * {@link TimeZone#getDefault()} time zone.
      *
      * @param minDate The minimal supported date.
      */
@@ -327,9 +329,9 @@ public class DatePicker extends FrameLayout {
     }
 
     /**
-     * Gets the maximal date supported by this {@link net.simonvt.widget.DatePicker} in
+     * Gets the maximal date supported by this {@link DatePicker} in
      * milliseconds since January 1, 1970 00:00:00 in
-     * {@link java.util.TimeZone#getDefault()} time zone.
+     * {@link TimeZone#getDefault()} time zone.
      * <p>
      * Note: The default maximal date is 12/31/2100.
      * <p>
@@ -341,9 +343,9 @@ public class DatePicker extends FrameLayout {
     }
 
     /**
-     * Sets the maximal date supported by this {@link net.simonvt.widget.DatePicker} in
+     * Sets the maximal date supported by this {@link DatePicker} in
      * milliseconds since January 1, 1970 00:00:00 in
-     * {@link java.util.TimeZone#getDefault()} time zone.
+     * {@link TimeZone#getDefault()} time zone.
      *
      * @param maxDate The maximal supported date.
      */
@@ -382,12 +384,8 @@ public class DatePicker extends FrameLayout {
 
     @Override
     public boolean dispatchPopulateAccessibilityEvent(AccessibilityEvent event) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            onPopulateAccessibilityEvent(event);
-            return true;
-        } else {
-            return super.dispatchPopulateAccessibilityEvent(event);
-        }
+        onPopulateAccessibilityEvent(event);
+        return true;
     }
 
     @Override
@@ -395,9 +393,21 @@ public class DatePicker extends FrameLayout {
         super.onPopulateAccessibilityEvent(event);
 
         final int flags = DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_YEAR;
-        String selectedDateUtterance = DateUtils.formatDateTime(mContext,
+        String selectedDateUtterance = DateUtils.formatDateTime(getContext(),
                 mCurrentDate.getTimeInMillis(), flags);
         event.getText().add(selectedDateUtterance);
+    }
+
+    @Override
+    public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
+        super.onInitializeAccessibilityEvent(event);
+        event.setClassName(DatePicker.class.getName());
+    }
+
+    @Override
+    public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
+        super.onInitializeAccessibilityNodeInfo(info);
+        info.setClassName(DatePicker.class.getName());
     }
 
     @Override
@@ -407,7 +417,7 @@ public class DatePicker extends FrameLayout {
     }
 
     /**
-     * Gets whether the {@link android.widget.CalendarView} is shown.
+     * Gets whether the {@link CalendarView} is shown.
      *
      * @return True if the calendar view is shown.
      * @see #getCalendarView()
@@ -417,7 +427,7 @@ public class DatePicker extends FrameLayout {
     }
 
     /**
-     * Gets the {@link android.widget.CalendarView}.
+     * Gets the {@link CalendarView}.
      *
      * @return The calendar view.
      * @see #getCalendarViewShown()
@@ -427,7 +437,7 @@ public class DatePicker extends FrameLayout {
     }
 
     /**
-     * Sets whether the {@link android.widget.CalendarView} is shown.
+     * Sets whether the {@link CalendarView} is shown.
      *
      * @param shown True if the calendar view is to be shown.
      */
@@ -660,7 +670,7 @@ public class DatePicker extends FrameLayout {
      * Updates the calendar view with the current date.
      */
     private void updateCalendarView() {
-         mCalendarView.setDate(mCurrentDate.getTimeInMillis(), false, false);
+        mCalendarView.setDate(mCurrentDate.getTimeInMillis(), false, false);
     }
 
     /**
@@ -708,26 +718,34 @@ public class DatePicker extends FrameLayout {
         } else {
             imeOptions = EditorInfo.IME_ACTION_DONE;
         }
-        TextView input = (TextView) spinner.findViewById(R.id.np_numberpicker_input);
+        TextView input = (TextView) spinner.findViewById(R.id.np__numberpicker_input);
         input.setImeOptions(imeOptions);
     }
 
     private void setContentDescriptions() {
+        if (true) return; // increment/decrement buttons don't exist in backport
         // Day
-        String text = mContext.getString(R.string.date_picker_increment_day_button);
-        mDaySpinner.findViewById(R.id.np_increment).setContentDescription(text);
-        text = mContext.getString(R.string.date_picker_decrement_day_button);
-        mDaySpinner.findViewById(R.id.np_decrement).setContentDescription(text);
+        trySetContentDescription(mDaySpinner, R.id.np__increment,
+                R.string.date_picker_increment_day_button);
+        trySetContentDescription(mDaySpinner, R.id.np__decrement,
+                R.string.date_picker_decrement_day_button);
         // Month
-        text = mContext.getString(R.string.date_picker_increment_month_button);
-        mMonthSpinner.findViewById(R.id.np_increment).setContentDescription(text);
-        text = mContext.getString(R.string.date_picker_decrement_month_button);
-        mMonthSpinner.findViewById(R.id.np_decrement).setContentDescription(text);
+        trySetContentDescription(mMonthSpinner, R.id.np__increment,
+                R.string.date_picker_increment_month_button);
+        trySetContentDescription(mMonthSpinner, R.id.np__decrement,
+                R.string.date_picker_decrement_month_button);
         // Year
-        text = mContext.getString(R.string.date_picker_increment_year_button);
-        mYearSpinner.findViewById(R.id.np_increment).setContentDescription(text);
-        text = mContext.getString(R.string.date_picker_decrement_year_button);
-        mYearSpinner.findViewById(R.id.np_decrement).setContentDescription(text);
+        trySetContentDescription(mYearSpinner, R.id.np__increment,
+                R.string.date_picker_increment_year_button);
+        trySetContentDescription(mYearSpinner, R.id.np__decrement,
+                R.string.date_picker_decrement_year_button);
+    }
+
+    private void trySetContentDescription(View root, int viewId, int contDescResId) {
+        View target = root.findViewById(viewId);
+        if (target != null) {
+            target.setContentDescription(getContext().getString(contDescResId));
+        }
     }
 
     private void updateInputState() {
@@ -736,9 +754,9 @@ public class DatePicker extends FrameLayout {
         // changed the value via the IME and there is a next input the IME will
         // be shown, otherwise the user chose another means of changing the
         // value and having the IME up makes no sense.
-        // InputMethodManager inputMethodManager = InputMethodManager.peekInstance();
+        //InputMethodManager inputMethodManager = InputMethodManager.peekInstance();
         InputMethodManager inputMethodManager =
-                (InputMethodManager) mContext.getSystemService(Context.INPUT_METHOD_SERVICE);
+                (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         if (inputMethodManager != null) {
             if (inputMethodManager.isActive(mYearSpinnerInput)) {
                 mYearSpinnerInput.clearFocus();
@@ -765,7 +783,7 @@ public class DatePicker extends FrameLayout {
         private final int mDay;
 
         /**
-         * Constructor called from {@link net.simonvt.widget.DatePicker#onSaveInstanceState()}
+         * Constructor called from {@link DatePicker#onSaveInstanceState()}
          */
         private SavedState(Parcelable superState, int year, int month, int day) {
             super(superState);
@@ -794,7 +812,7 @@ public class DatePicker extends FrameLayout {
 
         @SuppressWarnings("all")
         // suppress unused and hiding
-        public static final Creator<SavedState> CREATOR = new Creator<SavedState>() {
+        public static final Parcelable.Creator<SavedState> CREATOR = new Creator<SavedState>() {
 
             public SavedState createFromParcel(Parcel in) {
                 return new SavedState(in);

@@ -37,7 +37,7 @@
         android:gravity="center">
 
         <!-- Month -->
-        <net.simonvt.widget.NumberPicker
+        <net.simonvt.numberpicker.NumberPicker
             android:id="@+id/month"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -48,7 +48,7 @@
             />
 
         <!-- Day -->
-        <net.simonvt.widget.NumberPicker
+        <net.simonvt.numberpicker.NumberPicker
             android:id="@+id/day"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -59,7 +59,7 @@
             />
 
         <!-- Year -->
-        <net.simonvt.widget.NumberPicker
+        <net.simonvt.numberpicker.NumberPicker
             android:id="@+id/year"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -72,7 +72,7 @@
     </LinearLayout>
 
     <!-- calendar view -->
-    <net.simonvt.widget.CalendarView
+    <net.simonvt.calendarview.CalendarView
         android:id="@+id/calendar_view"
         android:layout_width="245dip"
         android:layout_height="280dip"

@@ -4,19 +4,23 @@
     <attr name="datePickerStyle" format="reference" />
 
     <declare-styleable name="DatePicker">
-        <!-- The first year (inclusive), for example "1940". -->
-        <attr name="android:startYear" />
-        <!-- The last year (inclusive), for example "2010". -->
-        <attr name="android:endYear" />
+        <!-- The first year (inclusive), for example "1940".
+             {@deprecated Use minDate instead.}
+         -->
+        <attr name="dp_startYear" format="integer" />
+        <!-- The last year (inclusive), for example "2010".
+             {@deprecated Use maxDate instead.}
+         -->
+        <attr name="dp_endYear" format="integer" />
         <!-- Whether the spinners are shown. -->
-        <attr name="android:spinnersShown" />
+        <attr name="dp_spinnersShown" format="boolean" />
         <!-- Whether the calendar view is shown. -->
-        <attr name="android:calendarViewShown" />
+        <attr name="dp_calendarViewShown" format="boolean" />
         <!-- The minimal date shown by this calendar view in mm/dd/yyyy format. -->
-        <attr name="android:minDate" />
-        <!-- The minimal date shown by this calendar view in mm/dd/yyyy format. -->
-        <attr name="android:maxDate" />
-        <!-- @hide The layout of the time picker. -->
-        <attr name="android:layout" />
+        <attr name="dp_minDate" format="string" />
+        <!-- The maximal date shown by this calendar view in mm/dd/yyyy format. -->
+        <attr name="dp_maxDate" format="string" />
+        <!-- @hide The layout of the date picker. -->
+        <attr name="dp_internalLayout" format="reference"  />
     </declare-styleable>
 </resources>

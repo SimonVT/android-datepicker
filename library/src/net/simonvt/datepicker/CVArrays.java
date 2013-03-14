@@ -1,11 +1,8 @@
-package net.simonvt.widget;
+package net.simonvt.datepicker;
 
 import java.lang.reflect.Array;
 
-/**
- * @author Simon Vig Therkildsen <simonvt@gmail.com>
- */
-public class CVArrays {
+class CVArrays {
 
     /**
      * Copies elements from {@code original} into a new array, from indexes start (inclusive) to

@@ -1,6 +1,6 @@
 package net.simonvt.datepicker.samples;
 
-import net.simonvt.widget.DatePicker;
+import net.simonvt.datepicker.DatePicker;
 
 import android.app.Activity;
 import android.content.res.Configuration;
