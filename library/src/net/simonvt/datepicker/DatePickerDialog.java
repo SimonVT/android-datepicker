@@ -148,12 +148,6 @@ public class DatePickerDialog extends AlertDialog implements OnClickListener,
         }
     }
 
-    @Override
-    protected void onStop() {
-        tryNotifyDateSet();
-        super.onStop();
-    }
-
     private void updateTitle(int year, int month, int day) {
         if (!mDatePicker.getCalendarViewShown()) {
             mCalendar.set(Calendar.YEAR, year);
