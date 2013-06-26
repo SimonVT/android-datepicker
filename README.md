@@ -1,3 +1,5 @@
+**This library is provided as-is and is not under active development**
+
 Android 4.0 DatePicker backported to 2.2  
 
 Dependencies:  
