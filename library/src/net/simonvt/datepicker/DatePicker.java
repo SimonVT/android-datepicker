@@ -390,7 +390,9 @@ public class DatePicker extends FrameLayout {
 
     @Override
     public void onPopulateAccessibilityEvent(AccessibilityEvent event) {
-        super.onPopulateAccessibilityEvent(event);
+    	if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+    		super.onPopulateAccessibilityEvent(event);
+    	}
 
         final int flags = DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_YEAR;
         String selectedDateUtterance = DateUtils.formatDateTime(getContext(),
